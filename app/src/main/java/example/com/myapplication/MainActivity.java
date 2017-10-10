@@ -1,19 +1,25 @@
 package example.com.myapplication;
 
-import android.content.Context;
-import android.support.v7.app.AppCompatActivity;
+import android.content.Intent;
 import android.os.Bundle;
-import android.util.Pair;
+import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
-public class MainActivity extends AppCompatActivity {
+import butterknife.BindView;
+import butterknife.ButterKnife;
+import example.com.androidjokelib.DisplayJokeActivity;
+
+public class MainActivity extends AppCompatActivity implements JokeCompleteListener {
+
+    @BindView(R2.id.progressbar) ProgressBar progressBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        ButterKnife.bind(this);
 
         getSupportFragmentManager().beginTransaction().
                 add(R.id.fragment,new MainActivityFragment()).commit();
@@ -21,8 +27,22 @@ public class MainActivity extends AppCompatActivity {
 
     @SuppressWarnings("unchecked")
     public void tellJoke(View view) {
-        Toast.makeText(this, "lol", Toast.LENGTH_SHORT).show();
+        progressBar.setVisibility(View.VISIBLE);
+        new EndpointsAsyncTask(this).execute();
+    }
 
-        new EndpointsAsyncTask().execute(new Pair<Context, String>(this, "Manfred"));
+    @Override
+    public void onComplete(String joke) {
+        progressBar.setVisibility(View.GONE);
+
+        Intent intent = new Intent(this, DisplayJokeActivity.class);
+        intent.putExtra(DisplayJokeActivity.KEY_JOKE, joke);
+        startActivity(intent);
+    }
+
+    @Override
+    public void onError(String error) {
+        progressBar.setVisibility(View.GONE);
+        Toast.makeText(this, "Failed to load joke. Please try again.", Toast.LENGTH_SHORT).show();
     }
 }
